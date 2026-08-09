@@ -2,6 +2,9 @@
 // Word Fade — Core Type Definitions
 // ═══════════════════════════════════════════════════
 
+import type { Word } from '@/types/word'
+export type { Word }
+
 export type Language = 'pl'
 
 export type Category =
@@ -19,23 +22,6 @@ export type Category =
   | 'feelings'
   | 'shopping'
   | 'university'
-
-export type Word = {
-  id: string
-  language: Language
-  word: string
-  translation: string
-  pronunciation: string
-  partOfSpeech: string
-  emoji: string
-  exampleSentence: string
-  exampleTranslation: string
-  sentenceParts: [string, string] // [before blank, after blank]
-  hint: string
-  crossLanguageHint?: string
-  category: Category
-  difficulty: 1 | 2 | 3
-}
 
 export type Stage = 'learn' | 'recognize' | 'rebuild' | 'recall' | 'use' | 'master'
 

@@ -1,172 +1,64 @@
 'use client'
 
-import React, { useState, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import React from 'react'
+import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
-import { LearnStage } from '@/components/stages/LearnStage'
-import { RecognizeStage } from '@/components/stages/RecognizeStage'
-import { RebuildStage } from '@/components/stages/RebuildStage'
-import { RecallStage } from '@/components/stages/RecallStage'
-import { UseStage } from '@/components/stages/UseStage'
-import { MasterStage } from '@/components/stages/MasterStage'
-import { ResultSummary } from '@/components/ResultSummary'
-import { ALL_WORDS, getWordsByCategory, getWordById } from '@/data/vocabulary'
-import { updateWordProgress } from '@/lib/storage'
-import { generateDistractors, calculateAccuracy } from '@/lib/game-engine'
-import { Word, Stage, STAGE_ORDER, StageResult, Category } from '@/lib/types'
+import { BottomNav } from '@/components/BottomNav'
+import { CATEGORY_META } from '@/lib/types'
 
-function PracticeSessionContent() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-
-  const categoryParam = searchParams.get('category') as Category | null
-  const wordParam = searchParams.get('word')
-
-  // Deck of words for this session
-  const deck = React.useMemo(() => {
-    if (wordParam) {
-      const single = getWordById(wordParam)
-      if (single) return [single]
-    }
-    if (categoryParam) {
-      const catWords = getWordsByCategory(categoryParam)
-      if (catWords.length > 0) return catWords
-    }
-    return ALL_WORDS
-  }, [categoryParam, wordParam])
-
-  // Active word index in deck
-  const [wordIndex, setWordIndex] = useState(0)
-  const currentWord = deck[wordIndex] || deck[0]
-
-  // Stage progression state
-  const [stageIndex, setStageIndex] = useState(0)
-  const currentStage: Stage = STAGE_ORDER[stageIndex]
-
-  // Collected results for the current word round
-  const [stageResults, setStageResults] = useState<StageResult[]>([])
-  const [isRoundComplete, setIsRoundComplete] = useState(false)
-
-  // Distractors generated for Recognize stage
-  const distractors = React.useMemo(() => {
-    if (!currentWord) return []
-    return generateDistractors(currentWord, ALL_WORDS)
-  }, [currentWord])
-
-  const handleStageAnswer = (correct: boolean) => {
-    const newResult: StageResult = {
-      stage: currentStage,
-      correct,
-    }
-    const updatedResults = [...stageResults, newResult]
-    setStageResults(updatedResults)
-
-    if (stageIndex < STAGE_ORDER.length - 1) {
-      // Advance to next stage
-      setStageIndex((prev) => prev + 1)
-    } else {
-      // Round Complete! Save progress and show summary
-      const accuracy = calculateAccuracy(updatedResults)
-      updateWordProgress(currentWord.id, accuracy)
-      setIsRoundComplete(true)
-    }
-  }
-
-  const handleNextWord = () => {
-    if (wordIndex < deck.length - 1) {
-      setWordIndex((prev) => prev + 1)
-      setStageIndex(0)
-      setStageResults([])
-      setIsRoundComplete(false)
-    } else {
-      // Return Home when deck is finished
-      router.push('/')
-    }
-  }
-
-  if (!currentWord) {
-    return (
-      <div className="p-8 text-center">
-        <p>No words found in deck.</p>
-        <button onClick={() => router.push('/')} className="mt-4 text-blue-600 underline">
-          Go back home
-        </button>
-      </div>
-    )
-  }
-
+export default function PracticeHubPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#f9f9ff]">
-      <Navbar
-        title={isRoundComplete ? 'Summary' : `Practice (${wordIndex + 1}/${deck.length})`}
-        showBack
-        onBack={() => router.push('/')}
-      />
+      <Navbar title="Practice Hub" />
 
-      {/* Progress Bar top indicator with pointer-events-none */}
-      {!isRoundComplete && (
-        <div className="fixed top-16 left-0 w-full h-1 bg-[#dce2f3] z-40 pointer-events-none">
-          <div
-            className="h-full bg-[#010204] transition-all duration-300 ease-out"
-            style={{
-              width: `${((stageIndex + 1) / STAGE_ORDER.length) * 100}%`,
-            }}
-          />
+      <main className="pt-20 pb-32 px-6 max-w-md mx-auto flex flex-col flex-grow w-full space-y-6">
+        <div className="space-y-1 pt-2">
+          <h2 className="text-2xl font-bold text-[#010204]">Supplementary Practice</h2>
+          <p className="text-xs text-[#45474a]/60">
+            Strengthen your memory with quick, zero-pressure practice modes
+          </p>
         </div>
-      )}
 
-      <main className="pt-20 pb-8 px-6 max-w-md mx-auto flex flex-col flex-grow w-full relative z-10">
-        {isRoundComplete ? (
-          <ResultSummary
-            word={currentWord}
-            stageResults={stageResults}
-            accuracy={calculateAccuracy(stageResults)}
-            onNextWord={wordIndex < deck.length - 1 ? handleNextWord : undefined}
-          />
-        ) : (
-          <>
-            {currentStage === 'learn' && (
-              <LearnStage
-                word={currentWord}
-                onComplete={() => handleStageAnswer(true)}
-              />
-            )}
-            {currentStage === 'recognize' && (
-              <RecognizeStage
-                word={currentWord}
-                distractors={distractors}
-                onAnswer={handleStageAnswer}
-              />
-            )}
-            {currentStage === 'rebuild' && (
-              <RebuildStage word={currentWord} onAnswer={handleStageAnswer} />
-            )}
-            {currentStage === 'recall' && (
-              <RecallStage word={currentWord} onAnswer={handleStageAnswer} />
-            )}
-            {currentStage === 'use' && (
-              <UseStage word={currentWord} onAnswer={handleStageAnswer} />
-            )}
-            {currentStage === 'master' && (
-              <MasterStage word={currentWord} onAnswer={handleStageAnswer} />
-            )}
-          </>
-        )}
+        {/* Practice Modes Cards */}
+        <div className="space-y-3">
+          <Link
+            href="/turbo"
+            className="block bg-white border border-[#c5c6ca]/30 rounded-2xl p-5 shadow-sm hover:border-[#39665d] transition-all cursor-pointer"
+          >
+            <div className="flex justify-between items-center mb-1">
+              <h3 className="font-bold text-[#010204]">Turbo Stream</h3>
+              <span className="text-xs font-bold text-[#39665d] bg-[#b9eade]/30 px-2.5 py-0.5 rounded-full">
+                Passive
+              </span>
+            </div>
+            <p className="text-xs text-[#45474a]/70">
+              High-speed, auto-advancing word exposure stream. No scoring pressure.
+            </p>
+          </Link>
+        </div>
+
+        {/* Practice By Topic Category */}
+        <div className="space-y-3 pt-2">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-[#45474a]/60">
+            Practice By Topic
+          </h3>
+
+          <div className="grid grid-cols-2 gap-3">
+            {CATEGORY_META.slice(0, 6).map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/learn?category=${cat.id}`}
+                className="bg-white border border-[#c5c6ca]/30 rounded-2xl p-4 shadow-sm hover:border-[#010204] transition-all cursor-pointer space-y-1"
+              >
+                <h4 className="font-bold text-sm text-[#010204]">{cat.name}</h4>
+                <p className="text-[11px] text-[#45474a]/60 line-clamp-1">{cat.description}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
       </main>
-    </div>
-  )
-}
 
-export default function PracticePage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#f9f9ff]">
-          <p className="text-sm font-sans-ui text-[#45474a]/60">Loading practice session...</p>
-        </div>
-      }
-    >
-      <PracticeSessionContent />
-    </Suspense>
+      <BottomNav />
+    </div>
   )
 }

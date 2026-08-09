@@ -4,166 +4,146 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
-import { ALL_WORDS, getWordsByCategory } from '@/data/vocabulary'
-import { getStoredProgress, getMasteryRecord } from '@/lib/storage'
-import { Word, Category, CATEGORY_META } from '@/lib/types'
+import { ALL_WORDS } from '@/data/vocabulary'
+import { createClient } from '@/lib/supabase/client'
+import {
+  fetchVocabulary,
+  fetchUserProgress,
+  fetchUserProfile,
+} from '@/lib/supabase/data'
+import { WordProgress, UserProfile } from '@/types/progress'
+import { Word } from '@/types/word'
 
 export default function HomePage() {
-  const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all')
-  const [progress, setProgress] = useState(getStoredProgress())
+  const [mounted, setMounted] = useState(false)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [progressMap, setProgressMap] = useState<Record<string, WordProgress>>({})
+  const [words, setWords] = useState<Word[]>(ALL_WORDS)
 
   useEffect(() => {
-    // Load fresh progress on client side
-    setProgress(getStoredProgress())
+    async function loadData() {
+      const supabase = createClient()
+      if (supabase) {
+        const { data: userAuth } = await supabase.auth.getUser()
+        if (userAuth?.user) {
+          const [prof, prog, vocab] = await Promise.all([
+            fetchUserProfile(userAuth.user.id),
+            fetchUserProgress(userAuth.user.id),
+            fetchVocabulary(),
+          ])
+
+          if (prof) setProfile(prof)
+          if (prog) setProgressMap(prog)
+          if (vocab.length > 0) setWords(vocab)
+        }
+      }
+      setMounted(true)
+    }
+
+    loadData()
   }, [])
 
-  // Filter words
-  const wordsToDisplay = React.useMemo(() => {
-    if (selectedCategory === 'all') return ALL_WORDS
-    return getWordsByCategory(selectedCategory)
-  }, [selectedCategory])
-
-  // Calculate total mastered words
   const masteredCount = React.useMemo(() => {
-    return Object.values(progress.mastery).filter((m) => m.level >= 5).length
-  }, [progress])
+    if (!mounted) return 0
+    return Object.values(progressMap).filter((p) => p.masteryScore >= 80).length
+  }, [progressMap, mounted])
+
+  const dueForReviewCount = React.useMemo(() => {
+    if (!mounted) return 0
+    const now = new Date()
+    return Object.values(progressMap).filter(
+      (p) => p.nextReviewAt && new Date(p.nextReviewAt) <= now
+    ).length
+  }, [progressMap, mounted])
+
+  const streak = profile?.currentStreak || 1
+  const displayName = profile?.displayName || 'Learner'
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f9f9ff]">
-      <Navbar title="Word Fade" />
+      <Navbar title="Słówka V2" />
 
-      <main className="pt-20 pb-32 px-6 max-w-md mx-auto flex flex-col flex-grow w-full">
-        {/* Quiet Weekly Summary */}
-        <div className="mb-6 text-center pt-2">
-          <p className="text-sm font-sans-ui text-[#45474a]/70 font-medium">
-            {masteredCount} {masteredCount === 1 ? 'word' : 'words'} mastered
-          </p>
+      <main className="pt-20 pb-32 px-6 max-w-md mx-auto flex flex-col flex-grow w-full space-y-6">
+        {/* Streak & Greeting Banner */}
+        <div className="bg-white border border-[#c5c6ca]/30 rounded-3xl p-6 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs uppercase font-bold tracking-widest text-[#39665d]">
+              Cześć, {displayName}!
+            </span>
+            <h2 className="text-2xl font-bold text-[#010204]">Daily Target</h2>
+            <p className="text-xs text-[#45474a]/70 font-sans-ui">
+              {profile?.xp ? `${profile.xp} total XP earned` : '5-Word Session'}
+            </p>
+          </div>
+          <div className="text-right">
+            <span className="text-3xl font-bold text-[#010204]">🔥 {streak}d</span>
+            <p className="text-[10px] uppercase font-bold text-[#45474a]/60">Streak</p>
+          </div>
         </div>
 
-        {/* Start Next Word Primary Button */}
-        <div className="mb-8 flex justify-center">
+        {/* Overdue Review Banner if items waiting */}
+        {dueForReviewCount > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 shadow-sm flex justify-between items-center">
+            <div>
+              <span className="text-xs uppercase font-bold tracking-wider text-amber-800">
+                Review Required
+              </span>
+              <p className="text-sm font-bold text-amber-950">
+                {dueForReviewCount} word{dueForReviewCount > 1 ? 's' : ''} waiting for review
+              </p>
+            </div>
+            <Link
+              href="/learn"
+              className="bg-amber-600 text-white text-xs uppercase font-bold tracking-wider px-4 py-2.5 rounded-full hover:bg-amber-700 transition-all cursor-pointer"
+            >
+              Review Now
+            </Link>
+          </div>
+        )}
+
+        {/* Primary Action: Continue Learning Session */}
+        <div className="space-y-3">
           <Link
-            href={
-              selectedCategory === 'all'
-                ? '/practice'
-                : `/practice?category=${selectedCategory}`
-            }
-            className="w-full bg-[#010204] text-[#ffffff] px-8 py-4 rounded-full font-bold text-sm tracking-wider uppercase flex items-center justify-center space-x-2 shadow-md hover:bg-[#010204]/90 active:scale-[0.98] transition-all"
+            href="/learn"
+            className="w-full bg-[#010204] text-white px-8 py-4 rounded-full font-bold text-sm tracking-wider uppercase flex items-center justify-center space-x-2 shadow-md hover:bg-[#010204]/90 active:scale-[0.98] transition-all cursor-pointer"
           >
-            <span>Start Practice</span>
+            <span>Continue Learning (5 Words)</span>
             <span className="material-symbols-outlined text-lg">arrow_forward</span>
+          </Link>
+
+          <Link
+            href="/practice"
+            className="w-full bg-white border border-[#39665d] text-[#39665d] px-8 py-3.5 rounded-full font-bold text-sm tracking-wider uppercase flex items-center justify-center space-x-2 hover:bg-[#b9eade]/20 active:scale-[0.98] transition-all cursor-pointer shadow-sm text-center"
+          >
+            <span>Practice Modes</span>
           </Link>
         </div>
 
-        {/* Category Pills Selector */}
-        <div className="mb-6 flex gap-2 overflow-x-auto hide-scroll pb-1">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
-              selectedCategory === 'all'
-                ? 'bg-[#010204] text-white'
-                : 'bg-white border border-[#c5c6ca]/40 text-[#45474a] hover:bg-[#e7eefe]'
-            }`}
-          >
-            All Words ({ALL_WORDS.length})
-          </button>
-          {CATEGORY_META.filter((cat) =>
-            ALL_WORDS.some((w) => w.category === cat.id)
-          ).map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all flex items-center space-x-1 ${
-                selectedCategory === cat.id
-                  ? 'bg-[#010204] text-white'
-                  : 'bg-white border border-[#c5c6ca]/40 text-[#45474a] hover:bg-[#e7eefe]'
-              }`}
-            >
-              <span>{cat.emoji}</span>
-              <span>{cat.name}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* List of Words with Word Fade Rule Applied */}
-        <div className="flex flex-col flex-grow">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-[#45474a]/50">
-              Vocabulary Deck
-            </h2>
-            <span className="text-xs text-[#45474a]/40">
-              Fade = Mastery Level
+        {/* Vocabulary Mastery Overview */}
+        <div className="bg-white border border-[#c5c6ca]/30 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-[#45474a]/60">
+              Vocabulary Mastery
+            </h3>
+            <span className="text-xs font-bold text-[#010204]">
+              {masteredCount} / {words.length} Mastered
             </span>
           </div>
 
-          <div className="space-y-1">
-            {wordsToDisplay.map((w) => {
-              const record = getMasteryRecord(progress, w.id)
-              const level = record.level // 0 to 5
+          <div className="w-full h-3 bg-[#e2e8f8] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#39665d] transition-all duration-500 ease-out"
+              style={{
+                width: `${Math.round((masteredCount / Math.max(1, words.length)) * 100)}%`,
+              }}
+            />
+          </div>
 
-              // Word Fade Scaffolding Calculation:
-              // Level 0-1: Opacity 100%, show translation
-              // Level 2-3: Opacity 75%, show faded translation
-              // Level 4-5: Opacity 50%, font-light, definition completely removed (Word Fade Rule)
-              const isMastered = level >= 5
-              const isHighMastery = level >= 4
-
-              return (
-                <Link
-                  key={w.id}
-                  href={`/practice?word=${w.id}`}
-                  className={`flex items-center justify-between py-4 border-b border-[#c5c6ca]/20 hover:bg-white/50 px-2 rounded-xl transition-all ${
-                    isMastered
-                      ? 'opacity-50'
-                      : isHighMastery
-                      ? 'opacity-70'
-                      : level >= 2
-                      ? 'opacity-85'
-                      : 'opacity-100'
-                  }`}
-                >
-                  <div className="space-y-0.5">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-base">{w.emoji}</span>
-                      <h3
-                        className={`text-xl text-[#151c27] ${
-                          isHighMastery ? 'font-light' : 'font-semibold'
-                        }`}
-                      >
-                        {w.word}
-                      </h3>
-                      <span className="text-xs text-[#45474a]/40 italic font-serif-context">
-                        {w.pronunciation}
-                      </span>
-                    </div>
-
-                    {!isHighMastery && (
-                      <p className="text-sm font-sans-ui text-[#45474a]/80 pl-7">
-                        {w.translation}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-[#f0f3ff] text-[#45474a]">
-                      {isMastered ? (
-                        <span className="material-symbols-outlined text-emerald-600">
-                          check_circle
-                        </span>
-                      ) : level > 0 ? (
-                        <span className="text-xs font-bold text-[#39665d]">
-                          L{level}
-                        </span>
-                      ) : (
-                        <span className="material-symbols-outlined text-xs text-[#45474a]/30">
-                          circle
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
+          <div className="pt-2 flex justify-between text-xs text-[#45474a]/70">
+            <span>{words.length - masteredCount} words remaining</span>
+            <Link href="/progress" className="text-[#39665d] font-bold hover:underline">
+              View Dashboard ➔
+            </Link>
           </div>
         </div>
       </main>

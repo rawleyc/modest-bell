@@ -21,8 +21,8 @@ export default function SettingsPage() {
               <h3 className="font-semibold text-[#010204]">Target Language</h3>
               <p className="text-xs text-[#45474a]/60">Currently active deck</p>
             </div>
-            <span className="text-sm font-bold text-[#39665d] bg-[#b9eade]/30 px-3 py-1 rounded-full">
-              🇵🇱 Polish
+            <span className="text-xs font-bold uppercase tracking-wider text-[#39665d] bg-[#b9eade]/30 px-3 py-1 rounded-full">
+              Polish
             </span>
           </div>
         </div>
@@ -50,7 +50,7 @@ export default function SettingsPage() {
               <h4 className="text-sm font-medium text-[#010204]">Diacritic Tolerance</h4>
               <p className="text-xs text-[#45474a]/60">Accepts basic Latin characters for Polish accents (e.g., e for ę)</p>
             </div>
-            <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
               Enabled
             </span>
           </div>
@@ -60,7 +60,7 @@ export default function SettingsPage() {
               <h4 className="text-sm font-medium text-[#010204]">Speech Engine (TTS)</h4>
               <p className="text-xs text-[#45474a]/60">Web Speech API with pl-PL locale voice filtering</p>
             </div>
-            <span className="text-xs font-bold text-[#39665d] bg-[#b9eade]/30 px-2.5 py-1 rounded-full">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#39665d] bg-[#b9eade]/30 px-2.5 py-1 rounded-full">
               Active
             </span>
           </div>

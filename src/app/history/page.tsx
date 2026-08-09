@@ -5,12 +5,20 @@ import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
 import { getStoredProgress, clearProgress } from '@/lib/storage'
 import { ALL_WORDS } from '@/data/vocabulary'
+import { UserProgress } from '@/lib/types'
+
+const DEFAULT_PROGRESS: UserProgress = {
+  mastery: {},
+  totalSessions: 0,
+}
 
 export default function HistoryPage() {
-  const [progress, setProgress] = useState(getStoredProgress())
+  const [mounted, setMounted] = useState(false)
+  const [progress, setProgress] = useState<UserProgress>(DEFAULT_PROGRESS)
 
   useEffect(() => {
     setProgress(getStoredProgress())
+    setMounted(true)
   }, [])
 
   const handleReset = () => {
@@ -21,11 +29,13 @@ export default function HistoryPage() {
   }
 
   // Calculate stats
-  const totalPracticed = Object.keys(progress.mastery).length
-  const masteredCount = Object.values(progress.mastery).filter((m) => m.level >= 5).length
-  const inProgressCount = Object.values(progress.mastery).filter(
-    (m) => m.level > 0 && m.level < 5
-  ).length
+  const totalPracticed = mounted ? Object.keys(progress.mastery).length : 0
+  const masteredCount = mounted
+    ? Object.values(progress.mastery).filter((m) => m.level >= 5).length
+    : 0
+  const inProgressCount = mounted
+    ? Object.values(progress.mastery).filter((m) => m.level > 0 && m.level < 5).length
+    : 0
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f9f9ff]">
@@ -59,7 +69,7 @@ export default function HistoryPage() {
             <p className="text-xs text-[#45474a]/70">Sessions completed in app</p>
           </div>
           <span className="text-2xl font-bold text-[#010204]">
-            {progress.totalSessions}
+            {mounted ? progress.totalSessions : 0}
           </span>
         </div>
 
@@ -69,7 +79,7 @@ export default function HistoryPage() {
             Word Mastery Log ({totalPracticed} / {ALL_WORDS.length})
           </h3>
 
-          {totalPracticed === 0 ? (
+          {!mounted || totalPracticed === 0 ? (
             <p className="text-sm text-[#45474a]/50 py-4 text-center">
               No practice records yet. Start practicing to build your log!
             </p>
@@ -105,8 +115,9 @@ export default function HistoryPage() {
         {/* Danger Zone */}
         <div className="pt-4">
           <button
+            type="button"
             onClick={handleReset}
-            className="w-full bg-white border border-rose-200 text-rose-600 py-3 rounded-full font-bold text-xs tracking-wider uppercase hover:bg-rose-50 transition-all"
+            className="w-full bg-white border border-rose-200 text-rose-600 py-3 rounded-full font-bold text-xs tracking-wider uppercase hover:bg-rose-50 transition-all cursor-pointer"
           >
             Reset Practice History
           </button>
