@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html class="h-full light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Word Fade – Polish</title>
+<meta name="description" content="Word Fade: a minimalist Polish vocabulary app that teaches words through 5 progressively harder recall stages."/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface":"#f9f9ff","on-primary-container":"#82858a","surface-tint":"#5c5e63",
+        "on-secondary-container":"#3d6b61","on-secondary-fixed-variant":"#1f4e46",
+        "on-secondary-fixed":"#00201b","surface-container":"#e7eefe",
+        "tertiary-container":"#1a1d1d","on-tertiary-fixed":"#191c1c",
+        "on-secondary":"#ffffff","inverse-on-surface":"#ebf1ff","surface-bright":"#f9f9ff",
+        "primary-fixed":"#e1e2e8","on-error":"#ffffff","tertiary":"#010202",
+        "surface-variant":"#dce2f3","inverse-surface":"#2a313d",
+        "on-surface-variant":"#45474a","background":"#f9f9ff","primary":"#010204",
+        "on-primary":"#ffffff","secondary-container":"#b9eade",
+        "surface-container-highest":"#dce2f3","on-background":"#151c27",
+        "surface-container-lowest":"#ffffff","primary-container":"#1a1d21",
+        "on-error-container":"#93000a","surface-container-high":"#e2e8f8",
+        "primary-fixed-dim":"#c5c6cc","secondary-fixed-dim":"#a0d0c5",
+        "on-primary-fixed":"#191c20","outline-variant":"#c5c6ca",
+        "on-tertiary-fixed-variant":"#454747","on-surface":"#151c27",
+        "on-tertiary":"#ffffff","surface-dim":"#d3daea","on-tertiary-container":"#838584",
+        "secondary-fixed":"#bcece0","outline":"#75777b","surface-container-low":"#f0f3ff",
+        "inverse-primary":"#c5c6cc","tertiary-fixed":"#e1e3e2",
+        "error-container":"#ffdad6","on-primary-fixed-variant":"#44474b",
+        "secondary":"#39665d","tertiary-fixed-dim":"#c5c7c6","error":"#ba1a1a"
+      },
+      borderRadius: { "DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem" },
+      spacing: {
+        "lg":"24px","xs":"4px","unit":"4px","container-margin":"24px",
+        "xl":"40px","md":"16px","stack-gap":"12px","sm":"8px"
+      },
+      fontFamily: {
+        "body-faded":["Hanken Grotesk"],"context-sentence":["\"Source Serif 4\""],
+        "display-word-mobile":["Hanken Grotesk"],"display-word":["Hanken Grotesk"],
+        "context-sentence-mobile":["\"Source Serif 4\""],"label-caps":["Hanken Grotesk"],
+        "body-main":["Hanken Grotesk"]
+      },
+      fontSize: {
+        "body-faded":["16px",{lineHeight:"24px",fontWeight:"400"}],
+        "context-sentence":["20px",{lineHeight:"32px",fontWeight:"400"}],
+        "display-word-mobile":["32px",{lineHeight:"40px",letterSpacing:"-0.01em",fontWeight:"600"}],
+        "display-word":["40px",{lineHeight:"48px",letterSpacing:"-0.02em",fontWeight:"600"}],
+        "context-sentence-mobile":["18px",{lineHeight:"28px",fontWeight:"400"}],
+        "label-caps":["12px",{lineHeight:"16px",letterSpacing:"0.05em",fontWeight:"700"}],
+        "body-main":["16px",{lineHeight:"24px",fontWeight:"400"}]
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { background-color:#f9f9ff; color:#151c27; }
+  .hide-scroll::-webkit-scrollbar { display:none; }
+  .hide-scroll { -ms-overflow-style:none; scrollbar-width:none; }
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24; }
+  .msf { font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
+
+  /* Screen transitions */
+  .screen { display:none; }
+  .screen.active { display:flex; }
+
+  /* Progress bar */
+  .progress-bar-fill { transition: width 0.5s ease-in-out; }
+
+  /* Option button */
+  .option-btn { transition: all 0.15s ease-out; }
+  .option-btn:active { transform: scale(0.98); }
+  .option-btn.selected { background-color:#010204; color:#ffffff; border-color:#010204; }
+  .option-btn.correct { background-color:#39665d; color:#ffffff; border-color:#39665d; }
+  .option-btn.wrong   { background-color:#ba1a1a; color:#ffffff; border-color:#ba1a1a; }
+
+  /* Pulse border for fill-in blanks */
+  .pulse-border { animation: pulseBorder 2s infinite; }
+  @keyframes pulseBorder {
+    0%,100% { border-color: rgba(1,2,4,0.25); }
+    50%      { border-color: rgba(1,2,4,0.9); }
+  }
+
+  /* Fade/slide animations */
+  @keyframes fadeInUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+  .fade-in-up  { animation: fadeInUp 0.5s ease-out forwards; }
+  .delay-100   { animation-delay:0.1s; opacity:0; }
+  .delay-200   { animation-delay:0.2s; opacity:0; }
+  .delay-300   { animation-delay:0.3s; opacity:0; }
+  .delay-400   { animation-delay:0.4s; opacity:0; }
+  .delay-500   { animation-delay:0.5s; opacity:0; }
+  .delay-700   { animation-delay:0.7s; opacity:0; }
+
+  /* Key button tap feedback */
+  .key-btn:active { background-color:#dce2f3; transform:scale(0.95); }
+  .key-btn { transition: background-color 0.1s, transform 0.1s; }
+
+  /* Input underline style */
+  .input-underline {
+    border:none; border-bottom:1px solid #75777b; border-radius:0;
+    background-color:transparent; padding:8px 0;
+    transition: border-bottom-width 0.2s ease, border-color 0.2s ease;
+  }
+  .input-underline:focus {
+    outline:none; box-shadow:none;
+    border-bottom:2px solid #010204;
+  }
+  .input-underline.correct { border-color:#39665d; border-bottom-width:2px; }
+  .input-underline.wrong   { border-color:#ba1a1a; border-bottom-width:2px; }
+
+  /* Mastery circle icons */
+  .mastery-0 .msf { display:none; }
+
+  /* Stage progression line */
+  #stage-line { transition: height 1.2s ease-out; }
+</style>
+</head>
+<body class="h-full font-body-main text-body-main antialiased bg-background">
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN: HOME
+════════════════════════════════════════════════════ -->
+<div id="screen-home" class="screen active flex-col h-full">
+
+  <!-- Top App Bar -->
+  <header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-lg h-16 bg-background border-b border-outline-variant/30">
+    <button class="flex items-center justify-center p-2 text-on-surface-variant/50 hover:opacity-80 transition-opacity active:scale-95 duration-200" onclick="showSettings()">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+    <h1 class="font-display-word-mobile text-display-word-mobile tracking-tighter text-primary">Word Fade</h1>
+    <button class="flex items-center justify-center p-2 text-on-surface-variant/50 hover:opacity-80 transition-opacity active:scale-95 duration-200">
+      <span class="material-symbols-outlined">more_vert</span>
+    </button>
+  </header>
+
+  <!-- Main Content -->
+  <main class="pt-24 pb-32 px-container-margin max-w-md mx-auto flex flex-col flex-grow overflow-y-auto hide-scroll w-full">
+
+    <!-- Quiet Summary -->
+    <div class="mb-xl text-center fade-in-up">
+      <p class="font-body-faded text-body-faded text-on-surface-variant/70" id="home-summary">Start learning Polish words.</p>
+    </div>
+
+    <!-- Start Next Button -->
+    <div class="mb-xl flex justify-center fade-in-up delay-100">
+      <button id="start-next-btn" onclick="startNextWord()" class="bg-primary text-on-primary px-8 py-4 rounded-full font-body-main text-body-main flex items-center gap-2 active:bg-tertiary transition-colors duration-200 hover:opacity-90">
+        <span>Start Next Word</span>
+        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+      </button>
+    </div>
+
+    <!-- Word List -->
+    <div class="flex flex-col gap-stack-gap flex-grow fade-in-up delay-200">
+      <h2 class="font-label-caps text-label-caps text-on-surface-variant/50 uppercase tracking-widest mb-2">To Master</h2>
+      <div id="home-word-list"></div>
+    </div>
+  </main>
+
+  <!-- Bottom Nav -->
+  <nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-xl py-md bg-background border-t border-outline-variant/20">
+    <a class="flex flex-col items-center justify-center text-on-surface-variant/40 hover:text-primary transition-colors" href="#" onclick="showStatsTab(); return false;">
+      <span class="material-symbols-outlined mb-1">history</span>
+      <span class="font-label-caps text-label-caps">History</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-primary scale-105 transition-transform duration-300 ease-out" href="#" id="nav-learn">
+      <span class="material-symbols-outlined mb-1 msf">school</span>
+      <span class="font-label-caps text-label-caps text-primary">Learn</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-on-surface-variant/40 hover:text-primary transition-colors" href="#">
+      <span class="material-symbols-outlined mb-1">settings</span>
+      <span class="font-label-caps text-label-caps">Settings</span>
+    </a>
+  </nav>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN: LEARN (Memory Card — Teach Phase)
+════════════════════════════════════════════════════ -->
+<div id="screen-learn" class="screen flex-col min-h-screen">
+
+  <!-- Thin progress bar -->
+  <div class="fixed top-0 left-0 w-full h-[2px] bg-surface-variant z-50">
+    <div class="h-full bg-primary progress-bar-fill" id="learn-progress-bar" style="width:0%"></div>
+  </div>
+
+  <main class="flex-grow flex flex-col items-center justify-center px-container-margin py-xl relative w-full max-w-2xl mx-auto">
+
+    <!-- Word Image -->
+    <div id="learn-image-wrap" class="relative w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden border border-outline-variant/30 mb-md bg-surface-container-lowest flex items-center justify-center fade-in-up">
+      <div id="learn-image-placeholder" class="w-full h-full flex items-center justify-center text-6xl bg-surface-container-low" aria-hidden="true"></div>
+    </div>
+
+    <div class="w-full flex flex-col items-center space-y-xl text-center">
+
+      <!-- Target Word -->
+      <div class="flex flex-col items-center space-y-xs w-full fade-in-up delay-100">
+        <h1 id="learn-word" class="font-display-word-mobile text-display-word-mobile md:font-display-word md:text-display-word text-primary tracking-tight">—</h1>
+        <div class="flex items-center space-x-md opacity-80 transition-opacity duration-700 delay-100">
+          <span id="learn-pron" class="font-context-sentence-mobile text-context-sentence-mobile md:font-context-sentence md:text-context-sentence text-on-surface-variant/80"></span>
+          <button aria-label="Play audio" onclick="speakCurrent()" class="p-2 rounded-full hover:bg-surface-variant/50 transition-colors text-primary active:scale-95 flex items-center justify-center">
+            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 0">volume_up</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Translation -->
+      <div class="fade-in-up delay-200">
+        <p id="learn-translation" class="font-context-sentence-mobile text-context-sentence-mobile md:font-context-sentence md:text-context-sentence text-on-background"></p>
+        <p id="learn-pos" class="font-body-faded text-body-faded text-on-surface-variant/60 mt-xs italic"></p>
+      </div>
+
+      <!-- Example sentence -->
+      <div class="max-w-md w-full opacity-60 hover:opacity-100 transition-opacity duration-300 mt-md border-l-2 border-primary/20 pl-md text-left fade-in-up delay-300">
+        <p id="learn-example-pl" class="font-context-sentence-mobile text-context-sentence-mobile md:font-context-sentence md:text-context-sentence text-on-surface-variant"></p>
+        <p id="learn-example-en" class="font-body-faded text-body-faded text-on-surface-variant/50 mt-unit"></p>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Bottom Action -->
+  <div class="w-full px-container-margin pb-xl pt-md flex justify-center sticky bottom-0 bg-gradient-to-t from-background via-background/90 to-transparent">
+    <button onclick="goToStage(1)" class="w-full max-w-sm bg-primary text-on-primary py-4 px-lg rounded-full font-label-caps text-label-caps hover:bg-primary/90 active:bg-primary/80 transition-colors duration-200 shadow-sm flex items-center justify-center space-x-sm group">
+      <span>Ready</span>
+      <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform duration-200 text-sm" style="font-variation-settings:'FILL' 0">arrow_forward</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN: STAGE 1 — RECOGNITION (image → 4 choices)
+════════════════════════════════════════════════════ -->
+<div id="screen-stage1" class="screen flex-col min-h-screen bg-background text-on-surface">
+
+  <div class="fixed top-0 left-0 w-full h-[2px] bg-surface-variant z-50">
+    <div class="h-full bg-primary progress-bar-fill" id="s1-progress" style="width:20%"></div>
+  </div>
+
+  <main class="flex-1 flex flex-col max-w-md mx-auto w-full px-container-margin pt-xl pb-xl">
+    <div class="flex flex-col h-full items-center justify-center space-y-xl mt-md">
+
+      <div class="w-full flex justify-between items-center opacity-70">
+        <span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Stage 1: Recognition</span>
+        <span class="font-label-caps text-label-caps text-on-surface-variant">1 / 5</span>
+      </div>
+
+      <!-- Focus Image -->
+      <div class="w-full aspect-square rounded-xl overflow-hidden border border-outline-variant/30 bg-surface-container relative">
+        <div id="s1-image" class="w-full h-full flex items-center justify-center text-8xl bg-surface-container-low"></div>
+        <button onclick="speakCurrent()" aria-label="Replay pronunciation" class="absolute bottom-md right-md w-10 h-10 rounded-full bg-surface/90 border border-outline-variant/50 flex items-center justify-center text-on-surface hover:bg-surface transition-colors active:scale-95">
+          <span class="material-symbols-outlined text-[20px]">volume_up</span>
+        </button>
+      </div>
+
+      <!-- Context Hint -->
+      <div class="w-full text-center px-md transition-opacity duration-500 opacity-50 hover:opacity-80">
+        <p id="s1-hint" class="font-context-sentence-mobile text-context-sentence-mobile md:font-context-sentence md:text-context-sentence text-on-surface-variant italic"></p>
+      </div>
+
+      <!-- Choices -->
+      <div class="w-full grid grid-cols-2 gap-stack-gap pt-lg" id="s1-options"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN: STAGE 2 — PARTIAL RECALL (fill missing letter)
+════════════════════════════════════════════════════ -->
+<div id="screen-stage2" class="screen flex-col min-h-screen bg-background">
+
+  <div class="fixed top-0 left-0 w-full h-[2px] bg-surface-variant z-50">
+    <div class="h-full bg-primary progress-bar-fill" id="s2-progress" style="width:40%"></div>
+  </div>
+
+  <header class="fixed top-0 left-0 w-full z-40 flex justify-between items-center px-lg h-16 bg-background border-b border-outline-variant/30 md:hidden">
+    <button onclick="goToStage(1)" aria-label="Close" class="w-10 h-10 flex items-center justify-center text-primary rounded-full hover:bg-surface-variant transition-colors">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+    <div class="font-display-word-mobile text-display-word-mobile tracking-tighter text-primary">Word Fade</div>
+    <div class="w-10"></div>
+  </header>
+
+  <main class="flex-grow flex flex-col items-center justify-center px-container-margin pt-16 md:pt-0">
+    <div class="w-full max-w-md flex flex-col items-center gap-xl fade-in-up">
+
+      <div class="w-full flex justify-between items-center opacity-70">
+        <span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Stage 2: Partial Recall</span>
+        <span class="font-label-caps text-label-caps text-on-surface-variant">2 / 5</span>
+      </div>
+
+      <!-- Context Image -->
+      <div class="w-48 h-48 md:w-64 md:h-64 rounded-xl overflow-hidden shadow-sm relative group bg-surface-variant">
+        <div id="s2-image" class="w-full h-full flex items-center justify-center text-7xl bg-surface-container-low grayscale group-hover:grayscale-0 transition-all duration-500 opacity-80 group-hover:opacity-100"></div>
+        <div class="absolute inset-0 border border-outline-variant/30 rounded-xl pointer-events-none"></div>
+      </div>
+
+      <!-- Partial Word Display -->
+      <div class="flex flex-col items-center gap-sm mt-8">
+        <div id="s2-word-display" class="font-display-word-mobile md:font-display-word text-display-word-mobile md:text-display-word text-primary tracking-widest flex items-end gap-2 flex-wrap justify-center"></div>
+        <div id="s2-hint-text" class="font-body-faded text-body-faded text-on-surface-variant/50 mt-2 opacity-50 hover:opacity-80 transition-opacity duration-300"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Custom Keyboard -->
+  <div class="fixed bottom-0 left-0 w-full bg-background border-t border-outline-variant/20 p-md pb-lg md:pb-md z-40">
+    <div class="max-w-md mx-auto grid grid-cols-5 gap-xs md:gap-sm" id="s2-keyboard-row1"></div>
+    <div class="max-w-md mx-auto grid grid-cols-3 gap-xs md:gap-sm mt-xs md:mt-sm">
+      <button onclick="s2Backspace()" class="col-span-1 key-btn bg-surface-variant hover:bg-surface-dim text-on-surface-variant font-label-caps text-label-caps rounded py-3 transition-colors flex items-center justify-center">
+        <span class="material-symbols-outlined text-[20px]">backspace</span>
+      </button>
+      <button class="col-span-2 key-btn bg-surface hover:bg-surface-variant text-on-surface font-label-caps text-label-caps rounded py-3 transition-colors">SPACE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN: STAGE 3 — RECALL (type full word, see image)
+════════════════════════════════════════════════════ -->
+<div id="screen-stage3" class="screen flex-col min-h-screen bg-background">
+
+  <div class="fixed top-0 left-0 w-full h-[2px] bg-surface-variant z-50">
+    <div class="h-full bg-primary progress-bar-fill" id="s3-progress" style="width:60%"></div>
+  </div>
+
+  <main class="flex-grow flex flex-col items-center justify-center px-container-margin pt-8 pb-8 relative w-full">
+    <div class="w-full max-w-md flex flex-col items-center gap-xl fade-in-up">
+
+      <div class="w-full flex justify-between items-center opacity-70">
+        <span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Stage 3: Recall</span>
+        <span class="font-label-caps text-label-caps text-on-surface-variant">3 / 5</span>
+      </div>
+
+      <!-- Image -->
+      <div class="w-full max-w-[280px] aspect-square rounded-xl overflow-hidden mb-xl">
+        <div id="s3-image" class="w-full h-full flex items-center justify-center text-8xl bg-surface-container-low"></div>
+      </div>
+
+      <!-- Input -->
+      <div class="w-full relative mt-xl">
+        <input id="s3-input" autocomplete="off" autofocus
+          class="w-full input-underline text-center font-display-word-mobile text-display-word-mobile placeholder:text-on-surface-variant/40 placeholder:font-body-faded placeholder:text-body-faded"
+          placeholder="Type the word…" spellcheck="false" type="text"/>
+      </div>
+
+      <!-- Hint area -->
+      <div class="h-8 mt-xs flex items-center justify-center w-full">
+        <p id="s3-hint" class="font-context-sentence text-context-sentence text-on-surface opacity-0 transition-opacity duration-700 italic text-center"></p>
+      </div>
+
+      <button id="s3-submit" onclick="submitStage3()" class="w-full max-w-sm bg-primary text-on-primary py-4 px-lg rounded-full font-label-caps text-label-caps hover:bg-primary/90 active:bg-primary/80 transition-colors duration-200 flex items-center justify-center gap-sm">
+        <span>Check</span>
+        <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 0">check</span>
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN: STAGE 4 — CONTEXT (fill blank in sentence)
+════════════════════════════════════════════════════ -->
+<div id="screen-stage4" class="screen flex-col min-h-screen bg-background justify-center items-center px-container-margin">
+
+  <div class="fixed top-0 left-0 w-full h-[2px] bg-surface-variant z-50">
+    <div class="h-full bg-primary progress-bar-fill" id="s4-progress" style="width:80%"></div>
+  </div>
+
+  <main class="w-full max-w-md flex flex-col items-center gap-xl fade-in-up z-10">
+
+    <div class="w-full flex justify-between items-center opacity-70">
+      <span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Stage 4: Context</span>
+      <span class="font-label-caps text-label-caps text-on-surface-variant">4 / 5</span>
+    </div>
+
+    <!-- Image -->
+    <div class="w-48 h-48 rounded-xl overflow-hidden shadow-sm relative">
+      <div id="s4-image" class="w-full h-full flex items-center justify-center text-7xl bg-surface-container-low opacity-90 hover:opacity-100 transition-opacity"></div>
+    </div>
+
+    <!-- Sentence with inline blank -->
+    <div class="text-center w-full relative group">
+      <p id="s4-sentence-before" class="font-context-sentence-mobile text-context-sentence-mobile md:font-context-sentence md:text-context-sentence text-on-surface inline"></p>
+      <span class="inline-block relative mx-1">
+        <input id="s4-input" aria-label="Target word input"
+          class="w-28 bg-transparent border-0 border-b border-outline hover:border-outline-variant focus:border-b-2 focus:border-primary focus:ring-0 text-center font-display-word-mobile text-display-word-mobile md:font-display-word md:text-display-word text-primary p-0 m-0 outline-none transition-all"
+          placeholder="" type="text" spellcheck="false" autocomplete="off"/>
+        <span id="s4-sentence-hint" class="absolute left-1/2 -bottom-6 -translate-x-1/2 font-context-sentence-mobile text-[14px] text-on-surface-variant opacity-0 group-hover:opacity-50 transition-opacity duration-700 pointer-events-none whitespace-nowrap"></span>
+      </span>
+      <p id="s4-sentence-after" class="font-context-sentence-mobile text-context-sentence-mobile md:font-context-sentence md:text-context-sentence text-on-surface inline"></p>
+    </div>
+
+    <button onclick="submitStage4()" class="w-full max-w-sm bg-primary text-on-primary py-4 px-lg rounded-full font-label-caps text-label-caps hover:bg-primary/90 active:bg-primary/80 transition-colors duration-200 flex items-center justify-center gap-sm mt-md">
+      <span>Check</span>
+      <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 0">check</span>
+    </button>
+  </main>
+
+  <div class="fixed bottom-0 w-full h-32 bg-gradient-to-t from-background to-transparent pointer-events-none z-0"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN: STAGE 5 — PRODUCTION (audio only → type)
+════════════════════════════════════════════════════ -->
+<div id="screen-stage5" class="screen flex-col min-h-screen bg-surface">
+
+  <div class="fixed top-0 left-0 w-full h-[2px] bg-surface-variant z-50">
+    <div class="h-full bg-primary progress-bar-fill" id="s5-progress" style="width:100%"></div>
+  </div>
+
+  <main class="flex-grow flex flex-col items-center justify-center px-container-margin py-xl">
+    <div class="w-full max-w-md flex flex-col items-center gap-xl">
+
+      <div class="w-full flex justify-between items-center opacity-70">
+        <span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Stage 5: Production</span>
+        <span class="font-label-caps text-label-caps text-on-surface-variant">5 / 5</span>
+      </div>
+
+      <!-- Audio button -->
+      <button onclick="speakCurrent()" aria-label="Play pronunciation" class="w-16 h-16 rounded-full bg-surface-container-low border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors active:scale-95 group">
+        <span class="material-symbols-outlined text-3xl font-light group-hover:font-normal transition-all" style="font-variation-settings:'FILL' 0">volume_up</span>
+      </button>
+
+      <!-- Very faded cross-language hint -->
+      <div id="s5-cross-lang" class="text-center font-context-sentence-mobile md:font-context-sentence text-context-sentence-mobile md:text-context-sentence text-on-surface-variant opacity-30 hover:opacity-50 transition-opacity duration-500 cursor-default"></div>
+
+      <!-- Input -->
+      <div class="w-full mt-lg">
+        <input id="s5-input" autocomplete="off" autofocus
+          class="w-full input-underline text-center font-display-word-mobile md:font-display-word text-display-word-mobile md:text-display-word text-primary placeholder:text-outline-variant/50"
+          placeholder="Type the word" spellcheck="false" type="text"/>
+      </div>
+
+      <button onclick="submitStage5()" class="w-full max-w-sm bg-primary text-on-primary py-4 px-lg rounded-full font-label-caps text-label-caps hover:bg-primary/90 active:bg-primary/80 transition-colors duration-200 flex items-center justify-center gap-sm">
+        <span>Check</span>
+        <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 0">check</span>
+      </button>
+    </div>
+  </main>
+
+  <div id="s5-hint-overlay" class="fixed bottom-xl left-0 w-full text-center opacity-0 transition-opacity duration-1000 pointer-events-none">
+    <span id="s5-hint-text" class="font-body-faded text-body-faded text-on-surface-variant"></span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN: WORD MASTERED (Results)
+════════════════════════════════════════════════════ -->
+<div id="screen-mastered" class="screen flex-col min-h-screen bg-surface">
+
+  <div class="fixed top-0 left-0 w-full h-[2px] bg-surface-variant z-50">
+    <div class="h-full bg-primary" style="width:100%"></div>
+  </div>
+
+  <main class="flex-1 w-full max-w-md px-container-margin mx-auto flex flex-col items-center justify-center opacity-0 transition-opacity duration-700 ease-in-out" id="mastered-main">
+
+    <!-- Header -->
+    <div class="text-center mb-xl w-full">
+      <h1 id="mastered-word-title" class="font-display-word-mobile text-display-word-mobile md:font-display-word md:text-display-word text-primary mb-sm tracking-tighter"></h1>
+      <p class="font-body-faded text-body-faded text-on-surface-variant">Accuracy: <span id="mastered-accuracy" class="font-bold text-primary">—</span></p>
+    </div>
+
+    <!-- Word info -->
+    <div class="mb-xl text-center">
+      <h2 id="mastered-translation" class="font-context-sentence-mobile text-context-sentence-mobile md:font-context-sentence md:text-context-sentence text-primary"></h2>
+      <p id="mastered-pron" class="font-body-faded text-body-faded text-on-surface-variant/50"></p>
+    </div>
+
+    <!-- Stage progression path -->
+    <div class="w-full mb-xl relative flex flex-col items-start pl-[20px]">
+      <div class="absolute left-[31px] top-[24px] bottom-[24px] w-[2px] bg-outline-variant/30 z-0"></div>
+      <div class="absolute left-[31px] top-[24px] w-[2px] bg-primary z-0" id="stage-line" style="height:0%"></div>
+      <div class="flex items-center gap-md mb-stack-gap w-full relative z-10 stage-item opacity-0 translate-y-4 transition-all duration-500">
+        <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-surface shrink-0">
+          <span class="material-symbols-outlined text-[14px] text-on-primary msf">check</span>
+        </div>
+        <span class="font-body-main text-body-main text-primary">Recognition</span>
+      </div>
+      <div class="flex items-center gap-md mb-stack-gap w-full relative z-10 stage-item opacity-0 translate-y-4 transition-all duration-500 delay-100">
+        <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-surface shrink-0">
+          <span class="material-symbols-outlined text-[14px] text-on-primary msf">check</span>
+        </div>
+        <span class="font-body-main text-body-main text-primary">Partial Recall</span>
+      </div>
+      <div class="flex items-center gap-md mb-stack-gap w-full relative z-10 stage-item opacity-0 translate-y-4 transition-all duration-500 delay-200">
+        <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-surface shrink-0">
+          <span class="material-symbols-outlined text-[14px] text-on-primary msf">check</span>
+        </div>
+        <span class="font-body-main text-body-main text-primary">Recall</span>
+      </div>
+      <div class="flex items-center gap-md mb-stack-gap w-full relative z-10 stage-item opacity-0 translate-y-4 transition-all duration-500 delay-300">
+        <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-surface shrink-0">
+          <span class="material-symbols-outlined text-[14px] text-on-primary msf">check</span>
+        </div>
+        <span class="font-body-main text-body-main text-primary">Context</span>
+      </div>
+      <div class="flex items-center gap-md w-full relative z-10 stage-item opacity-0 translate-y-4 transition-all duration-500 delay-400">
+        <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-surface shrink-0">
+          <span class="material-symbols-outlined text-[14px] text-on-primary msf">check</span>
+        </div>
+        <span class="font-body-main text-body-main text-primary font-bold">Production</span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div id="mastered-actions" class="w-full flex flex-col gap-sm mt-md opacity-0 translate-y-4 transition-all duration-700">
+      <button onclick="startNextWord()" class="w-full bg-primary text-on-primary font-label-caps text-label-caps py-md rounded-lg active:scale-[0.98] transition-transform duration-200">
+        NEXT WORD
+      </button>
+      <button onclick="goHome()" class="w-full bg-transparent text-primary font-label-caps text-label-caps py-md rounded-lg border border-outline-variant/50 active:scale-[0.98] transition-transform duration-200">
+        BACK TO HOME
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN: FEEDBACK (correct / wrong overlay)
+════════════════════════════════════════════════════ -->
+<div id="screen-feedback" class="screen fixed inset-0 z-[200] flex-col items-center justify-center bg-background/95 backdrop-blur-sm px-container-margin">
+  <div class="w-full max-w-md flex flex-col items-center gap-xl text-center">
+    <div id="fb-icon" class="text-6xl fade-in-up"></div>
+    <div>
+      <h2 id="fb-title" class="font-display-word-mobile text-display-word-mobile text-primary tracking-tight mb-sm"></h2>
+      <p id="fb-sub" class="font-body-faded text-body-faded text-on-surface-variant/70"></p>
+    </div>
+    <div id="fb-word-reveal" class="hidden w-full border-l-2 border-primary/20 pl-md text-left">
+      <p id="fb-polish" class="font-display-word-mobile text-display-word-mobile text-primary tracking-tight"></p>
+      <p id="fb-english" class="font-body-faded text-body-faded text-on-surface-variant mt-xs"></p>
+    </div>
+    <button id="fb-continue-btn" onclick="continueFeedback()" class="w-full max-w-sm bg-primary text-on-primary py-4 px-lg rounded-full font-label-caps text-label-caps hover:bg-primary/90 active:bg-primary/80 transition-colors duration-200 flex items-center justify-center gap-sm">
+      <span id="fb-btn-label">Continue</span>
+      <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 0">arrow_forward</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     JAVASCRIPT — FULL GAME ENGINE
+════════════════════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════════════
+   WORD DATABASE
+═══════════════════════════════════════════════════ */
+const WORDS = [
+  {
+    pl:"kot", en:"cat", pron:"/kɔt/", pos:"Noun, masculine",
+    emoji:"🐱", crossLang:"gato (Spanish)",
+    ex_pl:'Czarny <strong class="text-primary font-semibold">kot</strong> śpi na kanapie.',
+    ex_en:"The black cat is sleeping on the couch.",
+    sentence_parts:["The"," ","is sleeping on the couch."],
+    hint:"Feline animal"
+  },
+  {
+    pl:"dom", en:"house", pron:"/dɔm/", pos:"Noun, masculine",
+    emoji:"🏠", crossLang:"maison (French)",
+    ex_pl:'Nasz <strong class="text-primary font-semibold">dom</strong> jest duży.',
+    ex_en:"Our house is big.",
+    sentence_parts:["Our"," ","is big."],
+    hint:"Where you live"
+  },
+  {
+    pl:"książka", en:"book", pron:"/ˈkɕɔ̃ʂka/", pos:"Noun, feminine",
+    emoji:"📚", crossLang:"libro (Spanish)",
+    ex_pl:'Ta <strong class="text-primary font-semibold">książka</strong> jest ciekawa.',
+    ex_en:"This book is interesting.",
+    sentence_parts:["This"," ","is interesting."],
+    hint:"You read it"
+  },
+  {
+    pl:"woda", en:"water", pron:"/ˈvɔda/", pos:"Noun, feminine",
+    emoji:"💧", crossLang:"agua (Spanish)",
+    ex_pl:'Chcę szklankę <strong class="text-primary font-semibold">wody</strong>.',
+    ex_en:"I want a glass of water.",
+    sentence_parts:["I want a glass of"," ","."],
+    hint:"Essential liquid"
+  },
+  {
+    pl:"chleb", en:"bread", pron:"/xlɛb/", pos:"Noun, masculine",
+    emoji:"🍞", crossLang:"pain (French)",
+    ex_pl:'Kup <strong class="text-primary font-semibold">chleb</strong> w sklepie.',
+    ex_en:"Buy bread at the store.",
+    sentence_parts:["Buy"," ","at the store."],
+    hint:"Baked staple food"
+  },
+  {
+    pl:"słońce", en:"sun", pron:"/ˈswɔɲt͡sɛ/", pos:"Noun, neuter",
+    emoji:"☀️", crossLang:"sol (Spanish)",
+    ex_pl:'<strong class="text-primary font-semibold">Słońce</strong> świeci jasno.',
+    ex_en:"The sun shines brightly.",
+    sentence_parts:["The"," ","shines brightly."],
+    hint:"Star at center of solar system"
+  },
+  {
+    pl:"drzewo", en:"tree", pron:"/ˈdʐɛvɔ/", pos:"Noun, neuter",
+    emoji:"🌳", crossLang:"árbol (Spanish)",
+    ex_pl:'To <strong class="text-primary font-semibold">drzewo</strong> jest bardzo stare.',
+    ex_en:"This tree is very old.",
+    sentence_parts:["This"," ","is very old."],
+    hint:"Tall plant with a trunk"
+  },
+  {
+    pl:"serce", en:"heart", pron:"/ˈsɛrt͡sɛ/", pos:"Noun, neuter",
+    emoji:"❤️", crossLang:"coeur (French)",
+    ex_pl:'Moje <strong class="text-primary font-semibold">serce</strong> bije szybko.',
+    ex_en:"My heart beats fast.",
+    sentence_parts:["My"," ","beats fast."],
+    hint:"Pumps blood through the body"
+  },
+  {
+    pl:"pies", en:"dog", pron:"/pjɛs/", pos:"Noun, masculine",
+    emoji:"🐕", crossLang:"perro (Spanish)",
+    ex_pl:'Mój <strong class="text-primary font-semibold">pies</strong> lubi biegać.',
+    ex_en:"My dog likes to run.",
+    sentence_parts:["My"," ","likes to run."],
+    hint:"Loyal canine pet"
+  },
+  {
+    pl:"jabłko", en:"apple", pron:"/ˈjabwkɔ/", pos:"Noun, neuter",
+    emoji:"🍎", crossLang:"mela (Italian)",
+    ex_pl:'To jest czerwone <strong class="text-primary font-semibold">jabłko</strong>.',
+    ex_en:"This is a red apple.",
+    sentence_parts:["This is a red"," ","."],
+    hint:"Common fruit, red or green"
+  },
+  {
+    pl:"szkoła", en:"school", pron:"/ˈʂkɔwa/", pos:"Noun, feminine",
+    emoji:"🏫", crossLang:"école (French)",
+    ex_pl:'Dzieci idą do <strong class="text-primary font-semibold">szkoły</strong>.',
+    ex_en:"Children go to school.",
+    sentence_parts:["Children go to"," ","."],
+    hint:"Where children learn"
+  },
+  {
+    pl:"miłość", en:"love", pron:"/ˈmiwɔɕt͡ɕ/", pos:"Noun, feminine",
+    emoji:"💕", crossLang:"amor (Spanish)",
+    ex_pl:'<strong class="text-primary font-semibold">Miłość</strong> jest piękna.',
+    ex_en:"Love is beautiful.",
+    sentence_parts:[""," ","is beautiful."],
+    hint:"Deepest human emotion"
+  },
+];
+
+/* ═══════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════ */
+let state = {
+  mastery: {},      // pl_word -> { level:0-5, correct:0, wrong:0 }
+  weekMastered: 0,
+  totalSessions: 0,
+};
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('wordfade_v1');
+    if (s) state = {...state, ...JSON.parse(s)};
+  } catch(e) {}
+}
+function saveState() {
+  try { localStorage.setItem('wordfade_v1', JSON.stringify(state)); } catch(e) {}
+}
+
+function getMastery(word) { return state.mastery[word.pl] || {level:0, correct:0, wrong:0}; }
+function setMastery(word, data) {
+  state.mastery[word.pl] = data;
+  saveState();
+}
+function updateMastery(word, correct) {
+  const m = getMastery(word);
+  if (correct) { m.correct++; m.level = Math.min(5, m.level+1); }
+  else         { m.wrong++;   m.level = Math.max(0, m.level-1); sessionCorrect--; }
+  setMastery(word, m);
+}
+
+// Sort: lower mastery first, then random within same tier
+function getWordQueue() {
+  return [...WORDS].sort((a,b) => getMastery(a).level - getMastery(b).level);
+}
+
+/* ═══════════════════════════════════════════════════
+   CURRENT SESSION
+═══════════════════════════════════════════════════ */
+let currentWord  = null;
+let currentStage = 0;   // 0=learn,1-5=stages,6=mastered
+let sessionCorrect = 0;
+let sessionTotal   = 0;
+let feedbackNextAction = null;
+
+/* ═══════════════════════════════════════════════════
+   SCREEN ROUTING
+═══════════════════════════════════════════════════ */
+const SCREEN_IDS = ['screen-home','screen-learn','screen-stage1','screen-stage2',
+                    'screen-stage3','screen-stage4','screen-stage5','screen-mastered','screen-feedback'];
+
+function showScreen(id) {
+  SCREEN_IDS.forEach(sid => {
+    const el = document.getElementById(sid);
+    el.classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+}
+
+function goHome() { refreshHome(); showScreen('screen-home'); }
+
+/* ═══════════════════════════════════════════════════
+   HOME
+═══════════════════════════════════════════════════ */
+function refreshHome() {
+  const mastered = Object.values(state.mastery).filter(m=>m.level>=5).length;
+  const started  = Object.values(state.mastery).filter(m=>m.level>0).length;
+  const summEl = document.getElementById('home-summary');
+  if (mastered>0) summEl.textContent = `${mastered} word${mastered!==1?'s':''} fully mastered · ${started} in progress`;
+  else if (started>0) summEl.textContent = `${started} word${started!==1?'s':''} in progress. Keep going!`;
+  else summEl.textContent = 'Start learning Polish words.';
+
+  renderWordList();
+}
+
+function renderWordList() {
+  const container = document.getElementById('home-word-list');
+  container.innerHTML = '';
+  getWordQueue().forEach(word => {
+    const m = getMastery(word);
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between py-4 border-b border-outline-variant/20 cursor-pointer hover:opacity-80 transition-opacity';
+    // Fade out as mastery increases
+    const opacity = m.level === 0 ? 1 : m.level <= 2 ? 0.8 : m.level <= 3 ? 0.65 : 0.5;
+    row.style.opacity = opacity;
+
+    let iconHtml = '';
+    if (m.level === 0) {
+      iconHtml = `<span class="material-symbols-outlined text-on-surface-variant/60" style="font-variation-settings:'FILL' 0">circle</span>`;
+    } else if (m.level <= 2) {
+      iconHtml = `<span class="material-symbols-outlined text-on-surface-variant/60" style="font-variation-settings:'FILL' 0">contrast</span>`;
+    } else {
+      iconHtml = `<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings:'FILL' 1">check_circle</span>`;
+    }
+
+    const showDef = m.level < 3;
+    row.innerHTML = `
+      <div>
+        <h3 class="font-display-word-mobile text-display-word-mobile text-on-surface ${m.level>=3?'font-light':''}">${word.pl}</h3>
+        ${showDef ? `<p class="font-body-faded text-body-faded text-on-surface-variant ${m.level>=2?'opacity-50':''}">${word.en}</p>` : ''}
+      </div>
+      <div class="w-12 h-12 flex items-center justify-center rounded-full ${m.level===0?'bg-surface-container-low':''} text-on-surface-variant">
+        ${iconHtml}
+      </div>
+    `;
+    row.addEventListener('click', () => startLearnWord(word));
+    container.appendChild(row);
+  });
+}
+
+function startNextWord() {
+  const queue = getWordQueue();
+  // Find first word not fully mastered
+  const next = queue.find(w => getMastery(w).level < 5) || queue[0];
+  startLearnWord(next);
+}
+
+/* ═══════════════════════════════════════════════════
+   LEARN PHASE (teach card)
+═══════════════════════════════════════════════════ */
+function startLearnWord(word) {
+  currentWord    = word;
+  currentStage   = 0;
+  sessionCorrect = 0;
+  sessionTotal   = 0;
+
+  document.getElementById('learn-word').textContent = word.pl;
+  document.getElementById('learn-pron').textContent = word.pron;
+  document.getElementById('learn-translation').textContent = word.en;
+  document.getElementById('learn-pos').textContent = word.pos;
+  document.getElementById('learn-example-pl').innerHTML = word.ex_pl;
+  document.getElementById('learn-example-en').textContent = word.ex_en;
+
+  const ph = document.getElementById('learn-image-placeholder');
+  ph.textContent = word.emoji;
+
+  showScreen('screen-learn');
+  setTimeout(() => speakCurrent(), 600);
+}
+
+/* ═══════════════════════════════════════════════════
+   STAGE ROUTING
+═══════════════════════════════════════════════════ */
+function goToStage(n) {
+  currentStage = n;
+  if (n===1) setupStage1();
+  else if (n===2) setupStage2();
+  else if (n===3) setupStage3();
+  else if (n===4) setupStage4();
+  else if (n===5) setupStage5();
+  else if (n===6) showMastered();
+}
+
+/* ═══════════════════════════════════════════════════
+   STAGE 1: RECOGNITION — image + 4 choices
+═══════════════════════════════════════════════════ */
+function setupStage1() {
+  const word = currentWord;
+  document.getElementById('s1-image').textContent = word.emoji;
+  document.getElementById('s1-hint').textContent = word.ex_en;
+
+  // Build 4 options: correct + 3 random distractors
+  const others = WORDS.filter(w=>w.pl!==word.pl);
+  const distractors = shuffle(others).slice(0,3).map(w=>w.en);
+  const options = shuffle([word.en, ...distractors]);
+
+  const grid = document.getElementById('s1-options');
+  grid.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn w-full py-md px-lg border border-outline-variant bg-surface rounded text-center font-body-main text-body-main text-on-surface hover:bg-surface-container transition-colors';
+    btn.textContent = opt;
+    btn.addEventListener('click', ()=>handleS1Click(btn, opt, word.en, grid));
+    grid.appendChild(btn);
+  });
+
+  showScreen('screen-stage1');
+}
+
+function handleS1Click(btn, chosen, correct, grid) {
+  if (grid.querySelector('.correct, .wrong')) return; // already answered
+  const isCorrect = chosen === correct;
+  sessionTotal++;
+
+  grid.querySelectorAll('button').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add('correct');
+    else if (b === btn && !isCorrect) b.classList.add('wrong');
+  });
+
+  updateMastery(currentWord, isCorrect);
+  if (isCorrect) sessionCorrect++;
+
+  setTimeout(() => {
+    if (isCorrect) {
+      goToStage(2);
+    } else {
+      showFeedback(false, "It means: <strong>" + correct + "</strong>", () => goToStage(2));
+    }
+  }, isCorrect ? 600 : 1200);
+}
+
+/* ═══════════════════════════════════════════════════
+   STAGE 2: PARTIAL RECALL — fill in missing letter
+═══════════════════════════════════════════════════ */
+let s2Answer = '';
+let s2MissingIdx = -1;
+let s2Filled = '';
+
+function setupStage2() {
+  const word = currentWord;
+  const pl = word.pl;
+
+  // Pick a random middle vowel or consonant to hide
+  // Deterministically pick based on word length
+  const candidates = [];
+  for (let i = 1; i < pl.length - 1; i++) {
+    if (pl[i] !== ' ') candidates.push(i);
+  }
+  s2MissingIdx = candidates[Math.floor(candidates.length / 2)];
+  s2Answer = pl[s2MissingIdx];
+  s2Filled = '';
+
+  document.getElementById('s2-image').textContent = word.emoji;
+  document.getElementById('s2-hint-text').textContent = `Noun · ${word.en}`;
+
+  // Build word display with blank
+  const display = document.getElementById('s2-word-display');
+  display.innerHTML = '';
+  for (let i = 0; i < pl.length; i++) {
+    if (i === s2MissingIdx) {
+      const blank = document.createElement('span');
+      blank.id = 's2-blank';
+      blank.className = 'w-8 md:w-12 border-b-2 border-primary text-center pb-1 h-[40px] md:h-[48px] pulse-border transition-colors duration-200 min-w-[2rem] flex items-end justify-center';
+      display.appendChild(blank);
+    } else {
+      const ch = document.createElement('span');
+      ch.textContent = pl[i];
+      display.appendChild(ch);
+    }
+  }
+
+  // Build smart keyboard: correct letter + vowels + some consonants
+  const vowels = ['a','e','i','o','u','ą','ę','ó'];
+  const extras = ['k','r','t','n','s','z','ż','ź','ć','ł'];
+  const pool = new Set([s2Answer.toLowerCase(), ...vowels.slice(0,4), ...extras.slice(0,3)]);
+  const keys = shuffle([...pool]).slice(0,5);
+  if (!keys.includes(s2Answer.toLowerCase())) { keys[4]=s2Answer.toLowerCase(); }
+  const row1 = document.getElementById('s2-keyboard-row1');
+  row1.innerHTML = '';
+  shuffle(keys).forEach(k => {
+    const btn = document.createElement('button');
+    btn.className = 'key-btn bg-surface hover:bg-surface-variant text-on-surface font-body-main text-body-main rounded py-3 transition-colors';
+    btn.textContent = k;
+    btn.addEventListener('click', () => s2KeyPress(k));
+    row1.appendChild(btn);
+  });
+
+  showScreen('screen-stage2');
+}
+
+function s2KeyPress(key) {
+  if (s2Filled) return; // already filled
+  s2Filled = key;
+  const blank = document.getElementById('s2-blank');
+  blank.textContent = key;
+  blank.classList.remove('pulse-border');
+
+  const isCorrect = key.toLowerCase() === s2Answer.toLowerCase();
+  blank.classList.add(isCorrect ? 'text-secondary' : 'text-error');
+  if (isCorrect) {
+    blank.style.borderColor = '#39665d';
+  } else {
+    blank.style.borderColor = '#ba1a1a';
+  }
+  sessionTotal++;
+  updateMastery(currentWord, isCorrect);
+  if (isCorrect) sessionCorrect++;
+
+  setTimeout(() => {
+    if (isCorrect) {
+      goToStage(3);
+    } else {
+      // Show correct letter briefly then move on
+      blank.textContent = s2Answer;
+      blank.style.borderColor = '#39665d';
+      blank.className = blank.className + ' text-secondary';
+      showFeedback(false, `The missing letter is <strong>${s2Answer}</strong>`, () => goToStage(3));
+    }
+  }, isCorrect ? 500 : 1000);
+}
+
+function s2Backspace() {
+  s2Filled = '';
+  const blank = document.getElementById('s2-blank');
+  if (blank) {
+    blank.textContent = '';
+    blank.classList.add('pulse-border');
+    blank.style.borderColor = '';
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   STAGE 3: RECALL — type full word from image only
+═══════════════════════════════════════════════════ */
+let s3HintTimer = null;
+
+function setupStage3() {
+  const word = currentWord;
+  document.getElementById('s3-image').textContent = word.emoji;
+  document.getElementById('s3-hint').textContent = word.en;
+
+  const inp = document.getElementById('s3-input');
+  inp.value = '';
+  inp.className = inp.className.replace(' correct','').replace(' wrong','');
+  inp.classList.add('input-underline','text-center','font-display-word-mobile','text-display-word-mobile','placeholder:text-on-surface-variant/40','placeholder:font-body-faded','placeholder:text-body-faded');
+  inp.placeholder = 'Type the word…';
+
+  document.getElementById('s3-hint').style.opacity = '0';
+
+  clearTimeout(s3HintTimer);
+  s3HintTimer = setTimeout(() => {
+    document.getElementById('s3-hint').style.opacity = '0.5';
+  }, 4000);
+
+  showScreen('screen-stage3');
+  setTimeout(() => inp.focus(), 300);
+}
+
+function submitStage3() {
+  const inp = document.getElementById('s3-input');
+  const val = inp.value.trim();
+  if (!val) { inp.focus(); return; }
+  clearTimeout(s3HintTimer);
+
+  const isCorrect = normalize(val) === normalize(currentWord.pl);
+  sessionTotal++;
+  updateMastery(currentWord, isCorrect);
+  if (isCorrect) sessionCorrect++;
+
+  inp.classList.add(isCorrect ? 'correct' : 'wrong');
+  inp.disabled = true;
+
+  setTimeout(() => {
+    inp.disabled = false;
+    inp.classList.remove('correct','wrong');
+    if (isCorrect) {
+      goToStage(4);
+    } else {
+      showFeedback(false, `The word is <strong>${currentWord.pl}</strong>`, () => goToStage(4));
+    }
+  }, 700);
+}
+
+document.getElementById('s3-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitStage3();
+});
+
+/* ═══════════════════════════════════════════════════
+   STAGE 4: CONTEXT — fill blank in sentence
+═══════════════════════════════════════════════════ */
+let s4HintTimer = null;
+
+function setupStage4() {
+  const word = currentWord;
+  document.getElementById('s4-image').textContent = word.emoji;
+
+  const [before, _blank, after] = word.sentence_parts;
+  document.getElementById('s4-sentence-before').innerHTML = before ? before + ' ' : '';
+  document.getElementById('s4-sentence-after').innerHTML  = after  ? ' ' + after  : '';
+  document.getElementById('s4-sentence-hint').textContent = word.hint;
+
+  const inp = document.getElementById('s4-input');
+  inp.value = '';
+  inp.style.borderBottomColor = '';
+  inp.style.borderBottomWidth = '';
+  inp.disabled = false;
+
+  clearTimeout(s4HintTimer);
+  const hintEl = document.getElementById('s4-sentence-hint');
+  hintEl.style.opacity = '0';
+  s4HintTimer = setTimeout(() => { if(!inp.value) hintEl.style.opacity = '0.5'; }, 3000);
+
+  showScreen('screen-stage4');
+  setTimeout(() => inp.focus(), 300);
+}
+
+function submitStage4() {
+  const inp = document.getElementById('s4-input');
+  const val = inp.value.trim();
+  if (!val) { inp.focus(); return; }
+  clearTimeout(s4HintTimer);
+
+  const isCorrect = normalize(val) === normalize(currentWord.pl);
+  sessionTotal++;
+  updateMastery(currentWord, isCorrect);
+  if (isCorrect) sessionCorrect++;
+
+  inp.style.borderBottomWidth = '2px';
+  inp.style.borderBottomColor = isCorrect ? '#39665d' : '#ba1a1a';
+  inp.disabled = true;
+
+  setTimeout(() => {
+    inp.disabled = false;
+    inp.style.borderBottomColor = '';
+    if (isCorrect) {
+      goToStage(5);
+    } else {
+      showFeedback(false, `The answer is <strong>${currentWord.pl}</strong>`, () => goToStage(5));
+    }
+  }, 700);
+}
+
+document.getElementById('s4-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitStage4();
+});
+
+/* ═══════════════════════════════════════════════════
+   STAGE 5: PRODUCTION — audio only, type from memory
+═══════════════════════════════════════════════════ */
+let s5HintTimer = null;
+
+function setupStage5() {
+  const word = currentWord;
+  document.getElementById('s5-cross-lang').textContent = word.crossLang;
+
+  const inp = document.getElementById('s5-input');
+  inp.value = '';
+  inp.classList.remove('correct','wrong');
+  inp.disabled = false;
+
+  const hintEl = document.getElementById('s5-hint-overlay');
+  const hintTx = document.getElementById('s5-hint-text');
+  hintEl.style.opacity = '0';
+  hintTx.textContent = `Starts with "${word.pl[0].toUpperCase()}"`;
+
+  clearTimeout(s5HintTimer);
+  s5HintTimer = setTimeout(() => { if(!inp.value) hintEl.style.opacity = '0.5'; }, 5000);
+
+  showScreen('screen-stage5');
+  setTimeout(() => { inp.focus(); speakCurrent(); }, 400);
+}
+
+function submitStage5() {
+  const inp = document.getElementById('s5-input');
+  const val = inp.value.trim();
+  if (!val) { inp.focus(); return; }
+  clearTimeout(s5HintTimer);
+
+  const isCorrect = normalize(val) === normalize(currentWord.pl);
+  sessionTotal++;
+  updateMastery(currentWord, isCorrect);
+  if (isCorrect) sessionCorrect++;
+
+  inp.style.borderBottomWidth = '2px';
+  inp.style.borderBottomColor = isCorrect ? '#39665d' : '#ba1a1a';
+  inp.disabled = true;
+
+  setTimeout(() => {
+    inp.disabled = false;
+    inp.style.borderBottomColor = '';
+    if (isCorrect) {
+      goToStage(6);
+    } else {
+      showFeedback(false, `The word is <strong>${currentWord.pl}</strong>`, () => goToStage(6));
+    }
+  }, 700);
+}
+
+document.getElementById('s5-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitStage5();
+});
+
+/* ═══════════════════════════════════════════════════
+   MASTERED SCREEN
+═══════════════════════════════════════════════════ */
+function showMastered() {
+  const acc = sessionTotal > 0 ? Math.round((sessionCorrect/sessionTotal)*100) : 100;
+
+  document.getElementById('mastered-word-title').textContent = currentWord.pl.toUpperCase() + ' MASTERED';
+  document.getElementById('mastered-accuracy').textContent = acc + '%';
+  document.getElementById('mastered-translation').textContent = currentWord.en;
+  document.getElementById('mastered-pron').textContent = currentWord.pron;
+
+  // Count mastered this week
+  const totalMastered = Object.values(state.mastery).filter(m=>m.level>=5).length;
+  state.weekMastered = totalMastered;
+  saveState();
+
+  showScreen('screen-mastered');
+
+  const main = document.getElementById('mastered-main');
+  main.style.opacity = '0';
+  setTimeout(() => { main.style.opacity = '1'; }, 100);
+
+  // Animate stage items
+  const items = document.querySelectorAll('.stage-item');
+  items.forEach((el, i) => {
+    setTimeout(() => {
+      el.classList.remove('opacity-0','translate-y-4');
+    }, 300 + i*150);
+  });
+
+  // Progress line
+  setTimeout(() => {
+    document.getElementById('stage-line').style.height = '100%';
+  }, 300);
+
+  // Actions
+  setTimeout(() => {
+    const actions = document.getElementById('mastered-actions');
+    actions.classList.remove('opacity-0','translate-y-4');
+  }, 1100);
+}
+
+/* ═══════════════════════════════════════════════════
+   FEEDBACK OVERLAY
+═══════════════════════════════════════════════════ */
+function showFeedback(isCorrect, subText, nextAction) {
+  feedbackNextAction = nextAction;
+  document.getElementById('fb-icon').textContent    = isCorrect ? '✓' : '✗';
+  document.getElementById('fb-icon').style.color    = isCorrect ? '#39665d' : '#ba1a1a';
+  document.getElementById('fb-title').textContent   = isCorrect ? 'Correct!' : 'Not quite';
+  document.getElementById('fb-sub').innerHTML       = subText || '';
+  document.getElementById('fb-btn-label').textContent = isCorrect ? 'Continue' : 'Got it';
+
+  const revealEl = document.getElementById('fb-word-reveal');
+  if (!isCorrect) {
+    document.getElementById('fb-polish').textContent  = currentWord.pl;
+    document.getElementById('fb-english').textContent = currentWord.en;
+    revealEl.classList.remove('hidden');
+  } else {
+    revealEl.classList.add('hidden');
+  }
+
+  showScreen('screen-feedback');
+}
+
+function continueFeedback() {
+  if (feedbackNextAction) {
+    const fn = feedbackNextAction;
+    feedbackNextAction = null;
+    fn();
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════ */
+function normalize(str) {
+  return str.trim().toLowerCase()
+    .replace(/ą/g,'a').replace(/ć/g,'c').replace(/ę/g,'e')
+    .replace(/ł/g,'l').replace(/ń/g,'n').replace(/ó/g,'o')
+    .replace(/ś/g,'s').replace(/ź/g,'z').replace(/ż/g,'z');
+  // Note: we accept diacritic-stripped versions for tolerance
+}
+
+// Actually for strict checking, don't strip — use exact with accent tolerance
+function checkAnswer(input, correct) {
+  const ni = input.trim().toLowerCase();
+  const nc = correct.trim().toLowerCase();
+  if (ni === nc) return true;
+  // Diacritic tolerance
+  return normalize(ni) === normalize(nc);
+}
+
+// Override normalize to NOT strip for display, only for comparison
+// (already done above — normalize() used only in comparison context)
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i=a.length-1;i>0;i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function speakCurrent() {
+  if (!window.speechSynthesis || !currentWord) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(currentWord.pl);
+  utt.lang = 'pl-PL'; utt.rate = 0.8; utt.pitch = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const plVoice = voices.find(v=>v.lang.startsWith('pl'));
+  if (plVoice) utt.voice = plVoice;
+  window.speechSynthesis.speak(utt);
+}
+
+function showSettings() { /* Could expand later */ }
+function showStatsTab()  { /* Could show history */ }
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+loadState();
+refreshHome();
+showScreen('screen-home');
+
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.addEventListener('voiceschanged', ()=>window.speechSynthesis.getVoices());
+}
+</script>
+</body>
+</html>
