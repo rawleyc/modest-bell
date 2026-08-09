@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #f9f9ff;
+    --on-background: #151c27;
+    --primary: #010204;
+    --on-primary: #ffffff;
+    --secondary: #39665d;
+    --secondary-container: #b9eade;
+    --on-secondary-container: #3d6b61;
+    --surface: #f9f9ff;
+    --surface-container: #e7eefe;
+    --surface-container-low: #f0f3ff;
+    --surface-container-high: #e2e8f8;
+    --surface-container-highest: #dce2f3;
+    --surface-variant: #dce2f3;
+    --on-surface: #151c27;
+    --on-surface-variant: #45474a;
+    --outline: #75777b;
+    --outline-variant: #c5c6ca;
+    --error: #ba1a1a;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--on-background);
+  font-family: var(--font-hanken), sans-serif;
+  min-height: 100vh;
+}
+
+.font-serif-context {
+  font-family: var(--font-serif), serif;
+}
+
+.font-sans-ui {
+  font-family: var(--font-hanken), sans-serif;
+}
+
+/* Hide scrollbar for clean academic aesthetic */
+.hide-scroll::-webkit-scrollbar {
+  display: none;
+}
+.hide-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Fade transitions for Word Fade rule */
+.fade-transition {
+  transition: opacity 0.5s ease, filter 0.5s ease;
+}
