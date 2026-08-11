@@ -60,6 +60,29 @@ CREATE TABLE IF NOT EXISTS public.attempts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 5. GENERATED_CONTENT TABLE (V3 AI Examples Caching)
+CREATE TABLE IF NOT EXISTS public.generated_content (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  word_id TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'examples',
+  content_json JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT unique_word_content_type UNIQUE (word_id, type)
+);
+
+-- 6. GENERATED_EXERCISES TABLE (V3 AI Exercises Caching)
+CREATE TABLE IF NOT EXISTS public.generated_exercises (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  word_id TEXT NOT NULL,
+  stage INTEGER NOT NULL CHECK (stage >= 1 AND stage <= 5),
+  exercise_json JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT unique_word_stage UNIQUE (word_id, stage)
+);
+
+
 -- ===================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ===================================================
