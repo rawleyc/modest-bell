@@ -45,19 +45,6 @@ Rather than relying on basic flashcards, Słówka guides learners through five p
 
 ---
 
-## 💼 Portfolio & Resume Highlights
-
-If you are showcasing this repository on your resume or portfolio, here are tailored, high-impact bullet points:
-
-> **Full-Stack Software Engineer | Słówka V2 (AI-Augmented Language Learning Engine)**
-> - **Architected & Deployed** a full-stack vocabulary acquisition platform using **Next.js 16 (App Router)**, **React 19**, **TypeScript**, and **Supabase (PostgreSQL)** featuring a 5-stage cognitive learning pipeline.
-> - **Engineered an Adaptive Spaced-Repetition System** implementing dynamic mastery tiering (0–100 score) and automated decay intervals (12h to 30d) based on cognitive retrieval difficulty.
-> - **Built a Resilient AI Integration Layer** with Google Gemini API and a local fallback engine, utilizing **PostgreSQL JSONB caching** to reduce LLM latency by 90%+ and ensure offline availability.
-> - **Implemented Enterprise-Grade Database Security** using Supabase Row Level Security (RLS) policies, foreign key cascades, and automated PL/pgSQL user profile creation triggers.
-> - **Maintained High Code Quality & Reliability** through a comprehensive **Vitest unit testing suite** covering scheduling logic, adaptive session selection, game state engines, and AI providers.
-
----
-
 ## 🛠️ Architecture & Tech Stack
 
 ```text
